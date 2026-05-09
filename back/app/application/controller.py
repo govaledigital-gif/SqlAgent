@@ -1,9 +1,20 @@
-from fastapi import APIRouter, HTTPException, Depends
-from app.application.schemas import GenerateSqlRequest, GenerateSqlResponse, SchemaResponse
+from fastapi import APIRouter, HTTPException, Depends, status
+from app.application.schemas import (
+    GenerateSqlRequest, GenerateSqlResponse, SchemaResponse,
+    LoginRequest, RegisterRequest, TokenResponse, UserResponse,
+    QueryHistoryResponse, QueryHistoryListResponse
+)
 from app.application.service import SqlGeneratorService
+from app.application.auth_service import AuthService
+from app.application.dependencies import get_current_user
+from app.application.sql_validator import SqlValidator
 from app.infrastructure.repository import SchemaRepository
+from app.infrastructure.user_repository import UserRepository
+from app.infrastructure.query_history_repository import QueryHistoryRepository
 
 router = APIRouter(prefix="/api/v1", tags=["SQL Generator"])
+user_repo = UserRepository()
+history_repo = QueryHistoryRepository()
 
 # Dependency injection
 def get_schema_repository():
@@ -15,24 +26,104 @@ def get_sql_service(schema_repo: SchemaRepository = Depends(get_schema_repositor
     except ValueError as e:
         raise HTTPException(status_code=500, detail=f"Service initialization error: {str(e)}")
 
+# ============ AUTH ENDPOINTS ============
+
+@router.post("/auth/register", response_model=TokenResponse, tags=["Auth"])
+async def register(request: RegisterRequest):
+    """Register a new user"""
+    try:
+        user = user_repo.create_user(request.email, request.password, request.full_name)
+        token = AuthService.create_token(user.email)
+        return TokenResponse(access_token=token, email=user.email)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/auth/login", response_model=TokenResponse, tags=["Auth"])
+async def login(request: LoginRequest):
+    """Login user and return JWT token"""
+    if not user_repo.authenticate_user(request.email, request.password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password"
+        )
+    
+    token = AuthService.create_token(request.email)
+    return TokenResponse(access_token=token, email=request.email)
+
+@router.get("/auth/me", response_model=UserResponse, tags=["Auth"])
+async def get_current_user_info(current_user: str = Depends(get_current_user)):
+    """Get current authenticated user info"""
+    user = user_repo.get_user(current_user)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return UserResponse(email=user.email, full_name=user.full_name, is_active=user.is_active)
+
+# ============ SQL GENERATION ENDPOINTS (Protected) ============
+
 @router.post("/generate-sql", response_model=GenerateSqlResponse)
 async def generate_sql(
     request: GenerateSqlRequest,
+    current_user: str = Depends(get_current_user),
     service: SqlGeneratorService = Depends(get_sql_service)
 ):
     """Generate SQL query from natural language prompt"""
+    generated_query = None
+    error = None
+    is_valid = False
+    
     try:
         if not request.prompt.strip():
             raise HTTPException(status_code=400, detail="Prompt cannot be empty")
         
         query = await service.generate_sql(request.prompt, request.schema)
-        return GenerateSqlResponse(query=query)
+        generated_query = query
+        
+        # Validar la query generada
+        is_valid, error_msg = SqlValidator.validate(query)
+        if not is_valid:
+            error = f"Generated query failed validation: {error_msg}. Please try with a different request."
+            # Guardar en historial como inválida
+            history_repo.save_query(
+                user_email=current_user,
+                prompt=request.prompt,
+                generated_sql=query,
+                is_valid=False,
+                error_message=error_msg
+            )
+            return GenerateSqlResponse(query="", error=error)
+        
+        # Sanitizar la query
+        sanitized_query = SqlValidator.sanitize(query)
+        
+        # Guardar en historial como válida
+        history_repo.save_query(
+            user_email=current_user,
+            prompt=request.prompt,
+            generated_sql=sanitized_query,
+            is_valid=True
+        )
+        
+        return GenerateSqlResponse(query=sanitized_query)
     except Exception as e:
         error_msg = str(e)
+        # Guardar el error en historial
+        if current_user:
+            history_repo.save_query(
+                user_email=current_user,
+                prompt=request.prompt,
+                generated_sql=generated_query,
+                is_valid=False,
+                error_message=error_msg
+            )
         raise HTTPException(status_code=400, detail=error_msg)
 
 @router.get("/schema", response_model=SchemaResponse)
-async def get_schema(schema_repo: SchemaRepository = Depends(get_schema_repository)):
+async def get_schema(
+    current_user: str = Depends(get_current_user),
+    schema_repo: SchemaRepository = Depends(get_schema_repository)
+):
     """Get database schema"""
     try:
         tables = await schema_repo.list_tables()
@@ -44,6 +135,7 @@ async def get_schema(schema_repo: SchemaRepository = Depends(get_schema_reposito
 @router.get("/schema/{table_name}")
 async def get_table_schema(
     table_name: str,
+    current_user: str = Depends(get_current_user),
     schema_repo: SchemaRepository = Depends(get_schema_repository)
 ):
     """Get specific table schema"""
@@ -53,11 +145,81 @@ async def get_table_schema(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@router.get("/tables")
-async def list_tables(schema_repo: SchemaRepository = Depends(get_schema_repository)):
-    """List all available tables"""
+@router.get("/history")
+async def get_user_history(
+    current_user: str = Depends(get_current_user),
+    limit: int = 50
+):
+    """Get query history for current user"""
     try:
-        tables = await schema_repo.list_tables()
-        return {"tables": tables}
+        queries = history_repo.get_user_history(current_user, limit)
+        return {
+            "total": len(queries),
+            "queries": [
+                {
+                    "id": q.id,
+                    "user_email": q.user_email,
+                    "prompt": q.prompt,
+                    "generated_sql": q.generated_sql,
+                    "is_valid": q.is_valid,
+                    "error_message": q.error_message,
+                    "created_at": q.created_at
+                }
+                for q in queries
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/history/{query_id}")
+async def get_query_detail(
+    query_id: str,
+    current_user: str = Depends(get_current_user)
+):
+    """Get detail of a specific query from history"""
+    try:
+        query = history_repo.get_query(query_id)
+        if not query:
+            raise HTTPException(status_code=404, detail="Query not found")
+        
+        # Verificar que el usuario sea el dueño
+        if query.user_email != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        return {
+            "id": query.id,
+            "user_email": query.user_email,
+            "prompt": query.prompt,
+            "generated_sql": query.generated_sql,
+            "is_valid": query.is_valid,
+            "error_message": query.error_message,
+            "created_at": query.created_at
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.delete("/history/{query_id}")
+async def delete_query_from_history(
+    query_id: str,
+    current_user: str = Depends(get_current_user)
+):
+    """Delete a query from history"""
+    try:
+        query = history_repo.get_query(query_id)
+        if not query:
+            raise HTTPException(status_code=404, detail="Query not found")
+        
+        # Verificar que el usuario sea el dueño
+        if query.user_email != current_user:
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        if history_repo.delete_query(query_id):
+            return {"message": "Query deleted successfully"}
+        else:
+            raise HTTPException(status_code=500, detail="Failed to delete query")
+    except HTTPException:
+        raise
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))

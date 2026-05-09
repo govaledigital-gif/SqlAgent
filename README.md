@@ -1,6 +1,18 @@
-# 🚀 SQL Architect - The Data Agent
+# SQL Architect - The Data Agent
 
-An AI-powered SQL query translator that converts natural language descriptions into optimized MySQL queries. Built with FastAPI, React, LangChain, and Docker.
+An AI-powered SQL query translator that converts natural language descriptions into optimized MySQL queries. Built with FastAPI, React, Google Gemini API, and Docker with enterprise-grade security.
+
+## Features
+
+- 🤖 **AI-Powered SQL Generation**: Translate natural language prompts to optimized SQL
+- 🔐 **Enterprise Security**: Zero-hardcoded credentials, comprehensive audit logging
+- 🚀 **Scalable Architecture**: Hexagonal architecture ready for multi-tenancy
+- 📊 **Query History**: Track all generated queries per user
+- 🔑 **JWT Authentication**: Secure user authentication with bcrypt
+- ⚡ **Redis Caching**: High-performance schema caching
+- 📝 **SQL Validation**: Whitelist-based command validation, SQL injection prevention
+- 🎯 **Rate Limiting**: Per-IP rate limiting to prevent abuse
+- 📋 **Audit Trail**: Structured logging with automatic sensitive data masking
 
 ## 📋 Project Structure
 
@@ -8,45 +20,61 @@ An AI-powered SQL query translator that converts natural language descriptions i
 SqlAgent/
 ├── back/                    # Backend (Python/FastAPI)
 │   ├── app/
-│   │   ├── domain/         # Domain layer (interfaces)
-│   │   ├── infrastructure/ # Infrastructure layer (repositories)
-│   │   ├── application/    # Application layer (controllers, services)
-│   │   └── config/         # Configuration
+│   │   ├── domain/         # Domain layer (User, QueryHistory)
+│   │   ├── infrastructure/ # Infrastructure (repos, cache, logging)
+│   │   ├── application/    # Application (controllers, services)
+│   │   └── config/         # BaseSettings (centralized config)
+│   ├── scripts/            # Validation & utility scripts
 │   ├── requirements.txt
 │   ├── Dockerfile
 │   ├── main.py
-│   └── .env.example
+│   ├── .env                # Runtime secrets (git-ignored)
+│   └── .env.example        # Configuration template
 │
 ├── frontend/               # Frontend (React)
 │   ├── src/
-│   │   ├── components/    # React components
-│   │   ├── controllers/   # Business logic controllers
-│   │   ├── services/      # API services
-│   │   ├── utils/         # Utility functions
-│   │   ├── App.js
-│   │   └── index.js
-│   ├── public/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── .env.example
+│   │   ├── components/
+│   │   ├── controllers/
+│   │   ├── services/
+│   │   └── App.js
+│   └── package.json
 │
-└── docker-compose.yml     # Docker Compose configuration
+├── docker-compose.yml      # Multi-container orchestration
+├── SECURITY.md             # Security architecture & best practices
+└── README.md              # This file
 ```
 
 ## 🏗️ Architecture
 
-### Backend (Hexagonal Architecture)
-- **Domain Layer**: Core interfaces (`SqlGeneratorInterface`, `SchemaRepositoryInterface`)
-- **Infrastructure Layer**: Database repositories and external services
-- **Application Layer**: Controllers, services, and request/response models
+### Hexagonal Architecture (Backend)
 
-### Frontend (Module/Controller Pattern)
-- **Components**: Reusable React components
-- **Controllers**: Business logic management
-- **Services**: API communication layer
-- **Utils**: Helper functions and API client
+```
+┌─────────────────────────────────────────┐
+│  FastAPI Application (main.py)          │
+├─────────────────────────────────────────┤
+│  PORTS & ADAPTERS (app/application/)    │
+│  - Controller: REST API                 │
+│  - Service: Business logic              │
+│  - Schemas: Validation                  │
+│  - Auth: JWT & passwords                │
+│  - Validator: SQL security              │
+├─────────────────────────────────────────┤
+│  DOMAIN (app/domain/)                   │
+│  - User, QueryHistory entities          │
+│  - Repository interfaces                │
+├─────────────────────────────────────────┤
+│  INFRASTRUCTURE (app/infrastructure/)   │
+│  - Repositories (DB access)             │
+│  - Cache (Redis)                        │
+│  - Logging (Security logger)            │
+│  - Audit (Middleware)                   │
+├─────────────────────────────────────────┤
+│  EXTERNAL SYSTEMS                       │
+│  - MySQL, Redis, Google Gemini          │
+└─────────────────────────────────────────┘
+```
 
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 - Docker & Docker Compose
