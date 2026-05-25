@@ -71,6 +71,16 @@ class Settings(BaseSettings):
     QUERY_HISTORY_RETENTION_DAYS: int = 90
     MAX_QUERY_LENGTH: int = 5000
     MAX_PROMPT_LENGTH: int = 2000
+    # Registration control
+    ALLOW_REGISTRATION: bool = True
+    # Invite-based registration
+    REQUIRE_INVITE_TOKEN: bool = False
+    INVITE_TOKEN_TTL_SECONDS: int = 86400  # 1 day
+    ADMIN_API_TOKEN: Optional[str] = None
+
+    # Login protection
+    LOGIN_MAX_ATTEMPTS: int = 5
+    LOGIN_LOCKOUT_SECONDS: int = 900  # 15 minutes
     
     class Config:
         env_file = ".env"

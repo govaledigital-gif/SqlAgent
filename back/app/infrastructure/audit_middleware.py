@@ -92,6 +92,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "geolocation=(), microphone=(), camera=()"
         
         # Remove server identification
-        response.headers.pop("Server", None)
+        try:
+            del response.headers["Server"]
+        except KeyError:
+            pass
         
         return response

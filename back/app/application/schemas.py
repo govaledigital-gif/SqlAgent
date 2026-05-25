@@ -29,6 +29,7 @@ class RegisterRequest(BaseModel):
     email: str
     password: str
     full_name: Optional[str] = ""
+    invite_token: Optional[str] = None
 
 class TokenResponse(BaseModel):
     """Response model for token"""

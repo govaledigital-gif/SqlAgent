@@ -1,8 +1,6 @@
 from sqlalchemy import Column, String, DateTime, Text, Boolean, ForeignKey
-from sqlalchemy.ext.declarative import declarative_base
 from datetime import datetime
-
-Base = declarative_base()
+from app.domain.base import Base
 
 class QueryHistory(Base):
     """Query history model"""

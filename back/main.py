@@ -7,8 +7,10 @@ from slowapi import Limiter
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import logging
+from urllib.parse import urlparse
 
-from app.application.controller import router
+from app.application.controller import router as legacy_router
+from app.application.inventory_controller import router as inventory_router
 from app.config.settings import settings
 from app.infrastructure.security_logger import setup_logging, SecurityLogger
 from app.infrastructure.audit_middleware import AuditMiddleware, SecurityHeadersMiddleware
@@ -19,8 +21,8 @@ logger = SecurityLogger(__name__)
 
 # Create FastAPI app
 app = FastAPI(
-    title="SQL Architect - The Data Agent",
-    description="AI-powered SQL query translator from natural language",
+    title="Inventory Platform",
+    description="Modular inventory platform with AI copilot",
     version="1.0.0",
     docs_url="/api/docs" if settings.ENVIRONMENT != "production" else None,
     redoc_url="/api/redoc" if settings.ENVIRONMENT != "production" else None,
@@ -36,9 +38,14 @@ app.add_exception_handler(RateLimitExceeded, lambda request, exc: JSONResponse(
 
 # Security Middleware: Trusted Host
 if settings.CORS_ORIGINS:
+    allowed_hosts = sorted({
+        parsed.hostname
+        for parsed in (urlparse(origin) for origin in settings.CORS_ORIGINS)
+        if parsed.hostname
+    })
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=settings.CORS_ORIGINS
+        allowed_hosts=allowed_hosts
     )
 
 # CORS Middleware - Restrictive configuration
@@ -77,14 +84,20 @@ async def global_exception_handler(request: Request, exc: Exception):
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     """Handle validation errors securely"""
-    logger.warning(f"Validation error on {request.url.path}")
+    # Log detailed validation errors for debugging in development
+    try:
+        details = exc.errors()
+    except Exception:
+        details = str(exc)
+    logger.warning(f"Validation error on {request.url.path}: {details}")
     return JSONResponse(
         status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
         content={"detail": "Invalid request. Please check your input."}
     )
 
 # Include routes
-app.include_router(router)
+app.include_router(legacy_router)
+app.include_router(inventory_router)
 
 # Health check endpoint
 @app.get("/health", tags=["Health"])
@@ -100,7 +113,7 @@ def health_check():
 @app.on_event("startup")
 async def startup_event():
     """Initialize on startup"""
-    logger.info(f"Starting SQL Architect in {settings.ENVIRONMENT} mode")
+    logger.info(f"Starting Inventory Platform in {settings.ENVIRONMENT} mode")
     
     # Validate configuration
     if not settings.DATABASE_URL:
@@ -114,6 +127,9 @@ async def startup_event():
     if not settings.GOOGLE_API_KEY:
         logger.error("GOOGLE_API_KEY is not configured")
         raise RuntimeError("GOOGLE_API_KEY environment variable is required")
+
+    # Register inventory models before startup completes
+    from app.domain import inventory  # noqa: F401
     
     # Production-specific validations
     if settings.ENVIRONMENT == "production":
@@ -130,7 +146,7 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     """Cleanup on shutdown"""
-    logger.info("Shutting down SQL Architect")
+    logger.info("Shutting down Inventory Platform")
 
 if __name__ == "__main__":
     import uvicorn

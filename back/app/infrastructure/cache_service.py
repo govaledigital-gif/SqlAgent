@@ -81,3 +81,17 @@ class CacheService:
         except Exception as e:
             logger.warning(f"Cache clear pattern error: {str(e)}")
             return 0
+
+    def incr(self, key: str, amount: int = 1, ttl: int = None) -> int:
+        """Increment a numeric key and optionally set TTL for first time"""
+        if not self.client:
+            return 0
+        try:
+            val = self.client.incr(key, amount)
+            # If ttl specified and key was just created, set expiry
+            if ttl is not None:
+                self.client.expire(key, ttl)
+            return int(val)
+        except Exception as e:
+            logger.warning(f"Cache incr error: {str(e)}")
+            return 0
