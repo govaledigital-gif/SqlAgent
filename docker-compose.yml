@@ -9,6 +9,11 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   redis:
     image: redis:7-alpine
@@ -17,6 +22,18 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+
+  migrate:
+    build: ./back
+    container_name: iud_migrate
+    volumes:
+      - ./back:/app
+    env_file:
+      - ./back/.env
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["alembic", "upgrade", "head"]
 
   backend:
     build: ./back
@@ -28,8 +45,12 @@ services:
     ports:
       - "8001:8000"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      migrate:
+        condition: service_completed_successfully
 
 volumes:
   mysql_data:
