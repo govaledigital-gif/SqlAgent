@@ -12,8 +12,22 @@ const StockPanel = ({ companyId }) => {
 
   const fetchStock = async () => {
     try {
-      const data = await InventoryService.listStock(companyId);
-      setStock(data || []);
+      const [data, products, warehouses] = await Promise.all([
+        InventoryService.listStock(companyId),
+        InventoryService.listProducts(companyId),
+        InventoryService.listWarehouses(companyId),
+      ]);
+
+      const prodMap = new Map((products || []).map(p => [p.id, p]));
+      const whMap = new Map((warehouses || []).map(w => [w.id, w]));
+
+      const enriched = (data || []).map(s => ({
+        ...s,
+        product: prodMap.get(s.product_id)?.name || s.product_id,
+        warehouse: whMap.get(s.warehouse_id)?.name || s.warehouse_id,
+      }));
+
+      setStock(enriched);
     } catch (err) {
       setError(err.message);
     }

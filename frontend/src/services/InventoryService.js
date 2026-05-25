@@ -100,6 +100,16 @@ class InventoryService {
       throw new Error(err.response?.data?.detail || 'Failed to close cycle count');
     }
   }
+
+  async listLocations(companyId, warehouseId = null) {
+    try {
+      const url = warehouseId ? `/companies/${companyId}/locations?warehouse_id=${warehouseId}` : `/companies/${companyId}/locations`;
+      const res = await apiClient.get(url);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail || 'Failed to fetch locations');
+    }
+  }
 }
 
 const inventoryService = new InventoryService();
