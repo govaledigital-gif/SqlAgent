@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import InventoryService from '../services/InventoryService';
+import ProductsPanel from './ProductsPanel';
+import MovementsPanel from './MovementsPanel';
 import './InventoryDashboard.css';
 
 const InventoryDashboard = () => {
@@ -93,20 +95,30 @@ const InventoryDashboard = () => {
       </section>
 
       {selectedCompany && (
-        <section className="warehouses">
-          <h3>Warehouses for {selectedCompany.name}</h3>
-          <form onSubmit={handleCreateWarehouse} className="inline-form">
-            <input placeholder="Warehouse name" value={whName} onChange={(e) => setWhName(e.target.value)} required />
-            <input placeholder="Code" value={whCode} onChange={(e) => setWhCode(e.target.value)} required />
-            <button type="submit">Create Warehouse</button>
-          </form>
+        <>
+          <section className="warehouses">
+            <h3>Warehouses for {selectedCompany.name}</h3>
+            <form onSubmit={handleCreateWarehouse} className="inline-form">
+              <input placeholder="Warehouse name" value={whName} onChange={(e) => setWhName(e.target.value)} required />
+              <input placeholder="Code" value={whCode} onChange={(e) => setWhCode(e.target.value)} required />
+              <button type="submit">Create Warehouse</button>
+            </form>
 
-          <ul className="list">
-            {warehouses.map((w) => (
-              <li key={w.id}>{w.name} ({w.code})</li>
-            ))}
-          </ul>
-        </section>
+            <ul className="list">
+              {warehouses.map((w) => (
+                <li key={w.id}>{w.name} ({w.code})</li>
+              ))}
+            </ul>
+          </section>
+
+          <section className="products-section">
+            <ProductsPanel companyId={selectedCompany.id} />
+          </section>
+
+          <section className="movements-section">
+            <MovementsPanel companyId={selectedCompany.id} />
+          </section>
+        </>
       )}
     </div>
   );
