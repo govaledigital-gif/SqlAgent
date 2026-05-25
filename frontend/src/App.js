@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import SqlGenerator from './components/SqlGenerator';
 import AuthForm from './components/AuthForm';
 import SqlController from './controllers/SqlController';
+import InventoryDashboard from './components/InventoryDashboard';
 import './App.css';
 
 function App() {
   const [token, setToken] = useState(null);
   const sqlController = SqlController();
+  const [tab, setTab] = useState('sql');
 
   useEffect(() => {
     // Check if user is already logged in
@@ -34,11 +36,19 @@ function App() {
     <div className="App">
       <div className="app-header">
         <h1>🚀 Arquitecto SQL</h1>
-        <button className="logout-btn" onClick={handleLogout}>
-          Cerrar Sesión
-        </button>
+        <div>
+          <button className="tab-btn" onClick={() => setTab('sql')} aria-pressed={tab==='sql'}>SQL</button>
+          <button className="tab-btn" onClick={() => setTab('inventory')} aria-pressed={tab==='inventory'}>Inventory</button>
+          <button className="logout-btn" onClick={handleLogout}>
+            Cerrar Sesión
+          </button>
+        </div>
       </div>
-      <SqlGenerator controller={sqlController} token={token} />
+      {tab === 'sql' ? (
+        <SqlGenerator controller={sqlController} token={token} />
+      ) : (
+        <InventoryDashboard />
+      )}
     </div>
   );
 }
