@@ -64,6 +64,42 @@ class InventoryService {
       throw new Error(err.response?.data?.detail || 'Failed to record movement');
     }
   }
+
+  async listStock(companyId) {
+    try {
+      const res = await apiClient.get(`/companies/${companyId}/stock`);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail || 'Failed to fetch stock');
+    }
+  }
+
+  async listCycleCounts(companyId) {
+    try {
+      const res = await apiClient.get(`/companies/${companyId}/cycle-counts`);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail || 'Failed to fetch cycle counts');
+    }
+  }
+
+  async createCycleCount(companyId, payload) {
+    try {
+      const res = await apiClient.post(`/companies/${companyId}/cycle-counts`, payload);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail || 'Failed to create cycle count');
+    }
+  }
+
+  async closeCycleCount(companyId, countId) {
+    try {
+      const res = await apiClient.post(`/companies/${companyId}/cycle-counts/${countId}/close`);
+      return res.data;
+    } catch (err) {
+      throw new Error(err.response?.data?.detail || 'Failed to close cycle count');
+    }
+  }
 }
 
 const inventoryService = new InventoryService();

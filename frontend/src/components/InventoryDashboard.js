@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import InventoryService from '../services/InventoryService';
 import ProductsPanel from './ProductsPanel';
 import MovementsPanel from './MovementsPanel';
+import StockPanel from './StockPanel';
+import CycleCountsPanel from './CycleCountsPanel';
 import './InventoryDashboard.css';
 
 const InventoryDashboard = () => {
@@ -117,6 +119,14 @@ const InventoryDashboard = () => {
 
           <section className="movements-section">
             <MovementsPanel companyId={selectedCompany.id} />
+          </section>
+
+          <section className="stock-section">
+            <StockPanel companyId={selectedCompany.id} />
+          </section>
+
+          <section className="cyclecounts-section">
+            <CycleCountsPanel companyId={selectedCompany.id} />
           </section>
         </>
       )}
