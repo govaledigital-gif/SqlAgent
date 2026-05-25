@@ -42,4 +42,5 @@ class SqlService {
   }
 }
 
-export default new SqlService();
+const sqlService = new SqlService();
+export default sqlService;
