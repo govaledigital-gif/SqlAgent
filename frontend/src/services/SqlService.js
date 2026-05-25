@@ -33,7 +33,8 @@ class SqlService {
 
   async listTables() {
     try {
-      const response = await apiClient.get('/tables');
+      // Backend exposes /schema which returns { tables, schema }
+      const response = await apiClient.get('/schema');
       return response.data;
     } catch (error) {
       throw new Error(error.response?.data?.detail || 'Failed to fetch tables');
