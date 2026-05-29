@@ -33,3 +33,7 @@ jobs:
         run: |
           python -m pip install bandit
           bandit -r back -lll || true
+      - name: Run pip-audit security check
+        run: |
+          python -m pip install pip-audit
+          pip-audit --fail-on high || true
