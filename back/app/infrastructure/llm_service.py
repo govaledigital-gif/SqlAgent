@@ -52,24 +52,24 @@ class LLMService:
 
         # Try provider if configured
         # Basic anonymization: remove email addresses
-            anon_sql = re.sub(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", "[REDACTED_EMAIL]", sql)
+        anon_sql = re.sub(r"[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+", "[REDACTED_EMAIL]", sql)
 
         result = None
-            if settings.LLM_PROVIDER.lower() == "google":
-                # prefer company api key if available
+        if settings.LLM_PROVIDER.lower() == "google":
+            # prefer company api key if available
+            api_key = None
+            try:
+                if self.repo:
+                    comp = self.repo.get_company(company_id)
+                    api_key = getattr(comp, "ai_api_key", None)
+            except Exception:
                 api_key = None
-                try:
-                    if self.repo:
-                        comp = self.repo.get_company(company_id)
-                        api_key = getattr(comp, "ai_api_key", None)
-                except Exception:
-                    api_key = None
 
-                if api_key or settings.GOOGLE_API_KEY:
-                    try:
-                        result = self._call_google_generate(anon_sql, company_id=company_id, user_email=user_email, api_key=api_key or settings.GOOGLE_API_KEY)
-                    except Exception as e:
-                        logger.warning(f"LLMService: google call failed, falling back to local heuristics: {str(e)}")
+            if api_key or settings.GOOGLE_API_KEY:
+                try:
+                    result = self._call_google_generate(anon_sql, company_id=company_id, user_email=user_email, api_key=api_key or settings.GOOGLE_API_KEY)
+                except Exception as e:
+                    logger.warning(f"LLMService: google call failed, falling back to local heuristics: {str(e)}")
 
         # Fallback to simple heuristics if provider not used or failed
         if not result:

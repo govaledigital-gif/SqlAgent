@@ -26,9 +26,9 @@ jobs:
           python -m pip install -r back/requirements.txt
 
       - name: Run unit tests
-        working-directory: .
+        working-directory: back
         run: |
-          python -m unittest discover -v back/tests
+          python -m unittest discover -v tests
       - name: Run Bandit security scan
         run: |
           python -m pip install bandit
