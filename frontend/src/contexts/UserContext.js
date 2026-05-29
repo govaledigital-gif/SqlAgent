@@ -5,18 +5,31 @@ export const UserContext = createContext({ user: null, setUser: () => {} });
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [initializing, setInitializing] = useState(true);
 
   const fetchUser = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+    setInitializing(true);
+    let token = null;
+    try {
+      token = localStorage.getItem('access_token');
+    } catch (e) {
+      token = null;
+    }
+    if (!token) {
+      setUser(null);
+      setInitializing(false);
+      return;
+    }
     try {
       const resp = await apiClient.get('/auth/me');
       setUser(resp.data);
     } catch (err) {
       // token invalid or expired - clear
-      localStorage.removeItem('token');
-      localStorage.removeItem('email');
+      try { localStorage.removeItem('access_token'); } catch(e){}
+      try { localStorage.removeItem('email'); } catch(e){}
       setUser(null);
+    } finally {
+      setInitializing(false);
     }
   };
 
@@ -26,7 +39,7 @@ export const UserProvider = ({ children }) => {
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser }}>
+    <UserContext.Provider value={{ user, setUser, initializing }}>
       {children}
     </UserContext.Provider>
   );

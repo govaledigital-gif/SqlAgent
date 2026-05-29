@@ -57,9 +57,22 @@ class Settings(BaseSettings):
     SSL_KEYFILE: Optional[str] = None
     
     # ============ AI/LLM ============
-    GOOGLE_API_KEY: str = ""  # Required for Gemini
+    # Optional Google Generative AI API key (used for SQL optimization features)
+    GOOGLE_API_KEY: Optional[str] = None
     LLM_TIMEOUT_SECONDS: int = 30
     LLM_MAX_RETRIES: int = 2
+    # AI usage quotas (per user per hour)
+    AI_QUOTA_PER_HOUR: int = 100
+    # AI rate-limit (requests per minute)
+    AI_RATE_LIMIT_PER_MINUTE: int = 20
+    # LLM provider selection: 'local' or 'google'
+    LLM_PROVIDER: str = "local"
+    # Google Generative AI (Gemini) settings
+    GOOGLE_PROJECT: str = ""  # optional, used if requiring project-specific endpoint
+    GOOGLE_LOCATION: str = "us-central1"
+    GOOGLE_MODEL: str = "text-bison@001"
+    # Cost estimation (per 1000 tokens). Set to 0.0 to disable cost reporting.
+    TOKEN_PRICE_PER_1K: float = 0.0
     
     # ============ LOGGING ============
     LOG_LEVEL: str = "INFO"  # DEBUG, INFO, WARNING, ERROR, CRITICAL
@@ -94,8 +107,7 @@ class Settings(BaseSettings):
             if not self.JWT_SECRET or len(self.JWT_SECRET) < 32:
                 errors.append("JWT_SECRET must be set and at least 32 characters in production")
             
-            if not self.GOOGLE_API_KEY:
-                errors.append("GOOGLE_API_KEY is required in production")
+            # AI key not required for inventory-only MVP
             
             if not self.DATABASE_URL:
                 errors.append("DATABASE_URL is required")

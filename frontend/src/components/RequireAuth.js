@@ -3,8 +3,13 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { UserContext } from '../contexts/UserContext';
 
 const RequireAuth = ({ children }) => {
-  const { user } = useContext(UserContext);
+  const { user, initializing } = useContext(UserContext);
   const location = useLocation();
+
+  if (initializing) {
+    // while we check the token, don't redirect — show nothing or a loader
+    return <div style={{padding:20}}>Cargando sesión...</div>;
+  }
 
   if (!user) {
     // redirect to login page

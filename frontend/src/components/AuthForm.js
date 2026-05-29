@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import apiClient from '../utils/apiClient';
 import './AuthForm.css';
+import { UserContext } from '../contexts/UserContext';
 
 function AuthForm({ onSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -9,6 +10,7 @@ function AuthForm({ onSuccess }) {
   const [fullName, setFullName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const { setUser } = useContext(UserContext);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -24,12 +26,19 @@ function AuthForm({ onSuccess }) {
       const response = await apiClient.post(endpoint, payload);
       const data = response.data;
 
-      // Save token and user info
-      localStorage.setItem('token', data.access_token);
+      // Save token and user info (use a clear key)
+      localStorage.setItem('access_token', data.access_token);
       localStorage.setItem('email', data.email);
-      
+      // Try to fetch current user and update context so protected routes work immediately
+      try {
+        const me = await apiClient.get('/auth/me');
+        if (me?.data && setUser) setUser(me.data);
+      } catch (err) {
+        // ignore, user will be fetched on next reload
+      }
+
       // Notify parent component
-      onSuccess(data.access_token);
+      if (onSuccess) onSuccess(data.access_token);
     } catch (err) {
       const message = err?.response?.data?.detail || err.message || 'Authentication failed';
       setError(message);
@@ -106,6 +115,7 @@ function AuthForm({ onSuccess }) {
         <div className="demo-hint">
           💡 Demo: file_user@example.com / Passw0rd!
         </div>
+        {/* debug panel removed */}
       </div>
     </div>
   );

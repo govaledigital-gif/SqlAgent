@@ -6,6 +6,10 @@ from app.application.inventory_schemas import (
     CompanyMemberCreate,
     CompanyMemberRead,
     CompanyRead,
+    CompanyAIUpdate,
+    CompanyAIRead,
+    CompanyAIConfigUpdate,
+    CompanyAIConfigRead,
     CycleCountCreate,
     CycleCountRead,
     InventoryOverviewResponse,
@@ -62,6 +66,40 @@ def add_member(company_id: str, payload: CompanyMemberCreate, current_user: str 
 def list_members(company_id: str, current_user: str = Depends(get_current_user)):
     try:
         return inventory_service.list_members(company_id, current_user)
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+
+
+@router.get("/companies/{company_id}/ai", response_model=CompanyAIRead)
+def get_company_ai(company_id: str, current_user: str = Depends(get_current_user)):
+    company = inventory_service.repository.get_company(company_id, current_user)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return company
+
+
+@router.post("/companies/{company_id}/ai", response_model=CompanyAIRead)
+def set_company_ai(company_id: str, payload: CompanyAIUpdate, current_user: str = Depends(get_current_user)):
+    try:
+        company = inventory_service.set_company_ai_enabled(company_id, payload.enabled, current_user)
+        return company
+    except ValueError as exc:
+        raise HTTPException(status_code=403, detail=str(exc))
+
+
+@router.get("/companies/{company_id}/ai/config", response_model=CompanyAIConfigRead)
+def get_company_ai_config(company_id: str, current_user: str = Depends(get_current_user)):
+    company = inventory_service.repository.get_company(company_id, current_user)
+    if not company:
+        raise HTTPException(status_code=404, detail="Company not found")
+    return {"ai_api_key": getattr(company, "ai_api_key", None), "ai_quota_per_hour": int(getattr(company, "ai_quota_per_hour", "0") or 0)}
+
+
+@router.post("/companies/{company_id}/ai/config", response_model=CompanyAIConfigRead)
+def set_company_ai_config(company_id: str, payload: CompanyAIConfigUpdate, current_user: str = Depends(get_current_user)):
+    try:
+        company = inventory_service.set_company_ai_config(company_id, current_user, ai_api_key=payload.ai_api_key, ai_quota_per_hour=payload.ai_quota_per_hour)
+        return {"ai_api_key": company.ai_api_key, "ai_quota_per_hour": int(company.ai_quota_per_hour or 0)}
     except ValueError as exc:
         raise HTTPException(status_code=403, detail=str(exc))
 

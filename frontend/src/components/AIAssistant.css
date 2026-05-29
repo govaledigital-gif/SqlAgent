@@ -1,0 +1,16 @@
+.ai-assistant {
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin-top: 16px;
+  border-radius: 6px;
+  background: #fff;
+}
+.ai-assistant textarea {
+  width: 100%;
+  min-height: 80px;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+.ai-actions { margin-bottom: 8px; }
+.ai-result pre { background: #f7f7f7; padding: 8px; border-radius: 4px; overflow:auto; }
+.ai-error { color: #a94442; background: #f2dede; padding: 8px; border-radius: 4px; }

@@ -15,8 +15,33 @@ class CompanyRead(BaseModel):
     name: str
     code: str
     owner_email: str
+    ai_enabled: bool
     is_active: bool
     created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class CompanyAIUpdate(BaseModel):
+    enabled: bool
+
+
+class CompanyAIRead(BaseModel):
+    ai_enabled: bool
+
+    class Config:
+        from_attributes = True
+
+
+class CompanyAIConfigUpdate(BaseModel):
+    ai_api_key: str | None = None
+    ai_quota_per_hour: int | None = None
+
+
+class CompanyAIConfigRead(BaseModel):
+    ai_api_key: str | None = None
+    ai_quota_per_hour: int | None = None
 
     class Config:
         from_attributes = True

@@ -13,8 +13,7 @@ class AuditMiddleware(BaseHTTPMiddleware):
     AUDIT_PATHS = {
         "/api/v1/auth/register": "USER_REGISTRATION",
         "/api/v1/auth/login": "USER_LOGIN",
-        "/api/v1/generate-sql": "SQL_GENERATION",
-        "/api/v1/history/": "HISTORY_ACCESS",
+        # SQL generation and history endpoints removed for inventory-only MVP
     }
     
     async def dispatch(self, request: Request, call_next) -> Response:
