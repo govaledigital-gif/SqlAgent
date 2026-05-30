@@ -105,6 +105,22 @@ Services will be available at:
 - **Backend API**: http://localhost:8001
 - **MySQL**: localhost:3307
 
+## 🚢 Deployment
+
+The repository now includes a Docker publishing workflow for the backend and frontend images.
+
+- On pushes to `main` or `master`, GitHub Actions builds and publishes both images to GHCR:
+	- `ghcr.io/<owner>/sqlagent-backend`
+	- `ghcr.io/<owner>/sqlagent-frontend`
+- Images are tagged with the commit SHA and with `latest` on the default branch.
+
+To run the stack locally with Docker Compose:
+```bash
+docker-compose up --build -d
+```
+
+For production, point `DATABASE_URL` to your managed MySQL instance and keep `REDIS_HOST`/`REDIS_PORT` aligned with the target environment.
+
 ### Local Development
 
 #### Backend
