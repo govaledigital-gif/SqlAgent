@@ -1,4 +1,8 @@
+import os
+
 from fastapi import APIRouter, Depends, HTTPException
+
+os.environ.setdefault("DATABASE_URL", "sqlite:///:memory:")
 
 from app.application.dependencies import get_current_user
 from app.application.inventory_schemas import (
