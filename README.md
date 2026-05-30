@@ -121,6 +121,15 @@ docker-compose up --build -d
 
 For production, point `DATABASE_URL` to your managed MySQL instance and keep `REDIS_HOST`/`REDIS_PORT` aligned with the target environment.
 
+## 🔒 Security
+
+Security checks are split across CI and a dedicated workflow:
+
+- `bandit` and `pip-audit` run in the main CI pipeline.
+- Secret scanning runs in `.github/workflows/security.yml` through Gitleaks.
+
+If you add a new secret or environment variable, update the relevant `.env.example` file instead of committing the secret itself.
+
 ### Local Development
 
 #### Backend

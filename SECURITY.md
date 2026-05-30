@@ -219,6 +219,21 @@ Validates:
 - Log level appropriate
 - No localhost in CORS
 
+### 13. Automated Secret Scanning
+
+**CI Controls:**
+
+✓ Bandit runs in the main CI workflow for Python SAST
+✓ pip-audit runs in the main CI workflow for dependency vulnerabilities
+✓ Gitleaks runs in a dedicated security workflow for secret detection
+
+**Security workflow cadence:**
+- On pull requests
+- On pushes to the default branch
+- Weekly scheduled scan
+
+If a secret is added by mistake, rotate it immediately and remove it from git history.
+
 ## Security Best Practices Implemented
 
 ### ✓ Defense in Depth
@@ -298,6 +313,7 @@ Multiple security layers (auth → validation → logging → rate limiting)
 - [ ] Enable HTTPS/TLS at reverse proxy
 - [ ] Configure log aggregation (CloudWatch, ELK, etc.)
 - [ ] Review all environment variables
+- [ ] Run secret scan workflow and rotate any leaked credentials
 
 ### After Deployment
 
