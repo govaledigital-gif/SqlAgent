@@ -8,7 +8,7 @@ from app.application.dependencies import get_current_user
 
 class MockRepo:
     def __init__(self):
-        self._company = type("C", (), {"id": "comp1", "ai_enabled": True, "owner_email": "owner@example.com", "ai_api_key": None, "ai_quota_per_hour": "0"})
+        self._company = type("C", (), {"id": "comp1", "ai_enabled": True, "owner_email": "owner@example.com", "ai_api_key": None, "ai_quota_per_hour": "0"})()
 
     def get_company(self, company_id, user_email=None):
         if user_email is None:

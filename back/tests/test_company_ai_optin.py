@@ -8,7 +8,7 @@ from app.application.dependencies import get_current_user
 
 class MockRepo:
     def __init__(self):
-        self._company = type("C", (), {"id": "comp1", "ai_enabled": False, "owner_email": "owner@example.com"})
+        self._company = type("C", (), {"id": "comp1", "ai_enabled": False, "owner_email": "owner@example.com"})()
 
     def get_company(self, company_id, user_email=None):
         # return company only if user is member or no user provided
