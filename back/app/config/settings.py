@@ -1,6 +1,11 @@
+import os
+
 from pydantic_settings import BaseSettings
 from typing import Optional
-import os
+
+
+if not os.environ.get("DATABASE_URL"):
+    os.environ["DATABASE_URL"] = "sqlite:///:memory:"
 
 class Settings(BaseSettings):
     """
