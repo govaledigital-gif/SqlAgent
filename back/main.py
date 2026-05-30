@@ -15,10 +15,12 @@ from app.application.ai_controller import router as ai_router
 from app.config.settings import settings
 from app.infrastructure.security_logger import setup_logging, SecurityLogger
 from app.infrastructure.audit_middleware import AuditMiddleware, SecurityHeadersMiddleware
+from app.infrastructure.observability import MetricsMiddleware, init_sentry, router as observability_router
 
 # Setup logging first
 setup_logging(log_level=settings.LOG_LEVEL, log_format=settings.LOG_FORMAT)
 logger = SecurityLogger(__name__)
+init_sentry()
 
 # Create FastAPI app
 app = FastAPI(
@@ -63,6 +65,7 @@ app.add_middleware(
 # Security and Audit Middleware
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(AuditMiddleware)
+app.add_middleware(MetricsMiddleware)
 
 # Global Exception Handler
 @app.exception_handler(Exception)
@@ -100,6 +103,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 app.include_router(legacy_router)
 app.include_router(inventory_router)
 app.include_router(ai_router)
+app.include_router(observability_router)
 
 # Health check endpoint
 @app.get("/health", tags=["Health"])
@@ -126,9 +130,9 @@ async def startup_event():
         logger.error("JWT_SECRET is not properly configured")
         raise RuntimeError("JWT_SECRET must be set and at least 16 characters")
     
-    if not settings.GOOGLE_API_KEY:
-        logger.error("GOOGLE_API_KEY is not configured")
-        raise RuntimeError("GOOGLE_API_KEY environment variable is required")
+    if settings.LLM_PROVIDER.lower() == "google" and not settings.GOOGLE_API_KEY:
+        logger.error("GOOGLE_API_KEY is not configured for Google LLM provider")
+        raise RuntimeError("GOOGLE_API_KEY environment variable is required when LLM_PROVIDER=google")
 
     # Register inventory models before startup completes
     from app.domain import inventory  # noqa: F401

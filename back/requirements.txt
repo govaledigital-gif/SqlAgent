@@ -17,4 +17,6 @@ alembic==1.13.2
 requests==2.31.0
 tenacity==8.2.2
 httpx==0.24.1
+prometheus-client==0.20.0
+sentry-sdk==2.20.0
 
