@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 
 from app.application.controller import router as legacy_router
 from app.application.inventory_controller import router as inventory_router
+from app.application.ai_controller import router as ai_router
 from app.config.settings import settings
 from app.infrastructure.security_logger import setup_logging, SecurityLogger
 from app.infrastructure.audit_middleware import AuditMiddleware, SecurityHeadersMiddleware
@@ -98,6 +99,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
 # Include routes
 app.include_router(legacy_router)
 app.include_router(inventory_router)
+app.include_router(ai_router)
 
 # Health check endpoint
 @app.get("/health", tags=["Health"])

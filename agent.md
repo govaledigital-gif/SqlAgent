@@ -8,7 +8,7 @@
 
 ## 📊 Executive Summary
 
-**SQL Architect - The Data Agent** is an enterprise-grade AI-powered SQL query translator built with FastAPI, React, Google Gemini API, and Docker. It translates natural language prompts into optimized MySQL queries with production-ready security architecture (zero hardcoded credentials).
+This repository now contains an Inventory Management MVP built with FastAPI and React. The system provides authenticated management of companies, warehouses, products, inventory movements (receipts) and cycle counts, with an emphasis on secure defaults and audit logging.
 
 ### Current Status
 - **Backend**: Fully functional, secure, containerized

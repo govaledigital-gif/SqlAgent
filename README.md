@@ -1,18 +1,17 @@
-# SQL Architect - The Data Agent
+# Inventory Platform (MVP)
 
-An AI-powered SQL query translator that converts natural language descriptions into optimized MySQL queries. Built with FastAPI, React, Google Gemini API, and Docker with enterprise-grade security.
+This repository now hosts a lightweight Inventory Management MVP. It provides authenticated CRUD for companies, warehouses and products, movement/receipt recording, stock overview and cycle counts. Built with FastAPI (backend), React (frontend), MySQL and Redis for caching.
 
 ## Features
 
-- 🤖 **AI-Powered SQL Generation**: Translate natural language prompts to optimized SQL
-- 🔐 **Enterprise Security**: Zero-hardcoded credentials, comprehensive audit logging
-- 🚀 **Scalable Architecture**: Hexagonal architecture ready for multi-tenancy
-- 📊 **Query History**: Track all generated queries per user
-- 🔑 **JWT Authentication**: Secure user authentication with bcrypt
-- ⚡ **Redis Caching**: High-performance schema caching
-- 📝 **SQL Validation**: Whitelist-based command validation, SQL injection prevention
-- 🎯 **Rate Limiting**: Per-IP rate limiting to prevent abuse
-- 📋 **Audit Trail**: Structured logging with automatic sensitive data masking
+- 🔐 **JWT Authentication**: Secure user authentication with bcrypt
+- 🏢 **Companies & Warehouses**: Create and manage companies and warehouses
+- 📦 **Products**: Add and list products
+- 📥 **Movements / Receipts**: Record inventory movements and receipts
+- 📊 **Stock Overview**: View current stock by product/location
+- ✅ **Cycle Counts**: Create, record and close cycle counts with atomic adjustments
+- ⚡ **Redis Caching**: Cache frequently accessed data
+- 📋 **Audit Trail**: Structured logging for sensitive operations
 
 ## 📋 Project Structure
 
@@ -91,7 +90,6 @@ cd SqlAgent
 ```bash
 # Backend
 cp back/.env.example back/.env
-# Add your OPENAI_API_KEY to back/.env
 
 # Frontend
 cp frontend/.env.example frontend/.env
@@ -99,14 +97,13 @@ cp frontend/.env.example frontend/.env
 
 3. **Start all services**
 ```bash
-docker-compose up --build
+docker-compose up --build -d
 ```
 
 Services will be available at:
 - **Frontend**: http://localhost:3000
-- **Backend API**: http://localhost:8000
-- **API Docs**: http://localhost:8000/docs
-- **MySQL**: localhost:3306
+- **Backend API**: http://localhost:8001
+- **MySQL**: localhost:3307
 
 ### Local Development
 
@@ -126,76 +123,21 @@ npm install
 npm start
 ```
 
-## 📚 API Endpoints
+## 📚 API Overview
 
-### Generate SQL
-```
-POST /api/v1/generate-sql
-Content-Type: application/json
-
-{
-  "prompt": "Get all users who made purchases in the last 30 days",
-  "schema": null  // Optional, auto-fetched if not provided
-}
-
-Response:
-{
-  "query": "SELECT DISTINCT u.* FROM users u JOIN orders o ON u.id = o.user_id WHERE o.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY)"
-}
-```
-
-### Get Database Schema
-```
-GET /api/v1/schema
-
-Response:
-{
-  "tables": ["users", "orders", "products"],
-  "schema": "Database Schema:\n\nTable: users\n  - id: INTEGER NOT NULL\n..."
-}
-```
-
-### List Tables
-```
-GET /api/v1/tables
-
-Response:
-{
-  "tables": ["users", "orders", "products"]
-}
-```
-
-### Get Table Schema
-```
-GET /api/v1/schema/{table_name}
-
-Response:
-{
-  "table": "users",
-  "schema": "Table: users\n  - id: INTEGER NOT NULL\n..."
-}
-```
+The backend exposes authenticated endpoints to manage inventory entities (companies, warehouses, products), to record movements and to manage cycle counts. Use the frontend Inventory UI for most operations.
 
 ## 🔧 Configuration
 
 ### Backend Environment Variables
 ```env
 DATABASE_URL=mysql+pymysql://root:root@db/projects_db
-OPENAI_API_KEY=sk-...
 ```
 
 ### Frontend Environment Variables
 ```env
-REACT_APP_API_URL=http://localhost:8000/api/v1
+REACT_APP_API_URL=http://localhost:8001/api/v1
 ```
-
-## 🤖 How It Works
-
-1. **User Input**: User describes desired SQL query in natural language via React UI
-2. **Schema Fetch**: Backend retrieves current database schema from MySQL
-3. **AI Processing**: LangChain + GPT-4 generates optimized SQL from description + schema
-4. **Response**: Generated SQL is returned and displayed in frontend with copy option
-5. **User Action**: User can copy SQL and execute it in their database
 
 ## 📦 Tech Stack
 
@@ -203,7 +145,6 @@ REACT_APP_API_URL=http://localhost:8000/api/v1
 - **Framework**: FastAPI
 - **ORM**: SQLAlchemy
 - **Database**: MySQL 8.0
-- **AI**: LangChain + OpenAI GPT-4
 - **Server**: Uvicorn
 
 ### Frontend
@@ -217,8 +158,9 @@ REACT_APP_API_URL=http://localhost:8000/api/v1
 
 ## 🎯 Features
 
-✅ Convert natural language to SQL queries  
-✅ Automatic database schema detection  
+✅ Inventory management: companies/warehouses/products
+✅ Movements/receipts and stock overview
+✅ Cycle counts with atomic adjustments
 ✅ GPT-4 powered SQL optimization  
 ✅ Beautiful React UI with responsive design  
 ✅ Copy-to-clipboard functionality  

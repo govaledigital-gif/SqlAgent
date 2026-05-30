@@ -4,6 +4,8 @@ import ProductsPanel from './ProductsPanel';
 import MovementsPanel from './MovementsPanel';
 import StockPanel from './StockPanel';
 import CycleCountsPanel from './CycleCountsPanel';
+import AIAssistant from './AIAssistant';
+import NLAssistant from './NLAssistant';
 import './InventoryDashboard.css';
 
 const InventoryDashboard = () => {
@@ -127,6 +129,12 @@ const InventoryDashboard = () => {
 
           <section className="cyclecounts-section">
             <CycleCountsPanel companyId={selectedCompany.id} />
+          </section>
+          <section className="ai-assistant-section">
+            <AIAssistant companyId={selectedCompany.id} />
+          </section>
+          <section className="nl-assistant-section">
+            <NLAssistant companyId={selectedCompany.id} />
           </section>
         </>
       )}

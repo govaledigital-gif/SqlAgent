@@ -16,6 +16,15 @@ class InventoryService:
     def create_company(self, name: str, code: str, owner_email: str):
         return self.repository.create_company(name=name, code=code, owner_email=owner_email)
 
+    def set_company_ai_enabled(self, company_id: str, enabled: bool, actor_email: str):
+        # ensure actor is member and then delegate to repository which checks owner
+        self.ensure_access(company_id, actor_email)
+        return self.repository.update_company_ai_enabled(company_id, enabled, actor_email)
+
+    def set_company_ai_config(self, company_id: str, actor_email: str, ai_api_key: str | None = None, ai_quota_per_hour: int | None = None):
+        self.ensure_access(company_id, actor_email)
+        return self.repository.update_company_ai_config(company_id, actor_email, ai_api_key=ai_api_key, ai_quota_per_hour=ai_quota_per_hour)
+
     def list_companies(self, user_email: str):
         return self.repository.list_companies(user_email)
 

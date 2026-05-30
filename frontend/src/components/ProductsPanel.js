@@ -43,7 +43,7 @@ const ProductsPanel = ({ companyId }) => {
         <input placeholder="SKU" value={sku} onChange={(e) => setSku(e.target.value)} required />
         <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
         <input placeholder="UoM" value={uom} onChange={(e) => setUom(e.target.value)} required />
-        <button type="submit">Create</button>
+        <button type="submit">Crear</button>
       </form>
 
       <ul className="list">

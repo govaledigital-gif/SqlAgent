@@ -4,7 +4,8 @@ from decimal import Decimal
 import json
 from uuid import uuid4
 
-from sqlalchemy import func
+from sqlalchemy import func, text
+import re
 
 from app.config.settings import settings
 from app.domain.base import Base
@@ -73,6 +74,7 @@ class InventoryRepository:
                 name=name,
                 code=code,
                 owner_email=owner_email,
+                ai_enabled=False,
                 is_active=True,
             )
             member = CompanyMember(
@@ -85,6 +87,34 @@ class InventoryRepository:
             session.add(company)
             session.add(member)
             self._create_audit_event(session, company.id, owner_email, "company.created", "company", company.id, {"code": code})
+            return company
+
+    def update_company_ai_enabled(self, company_id: str, enabled: bool, actor_email: str | None = None) -> Company:
+        with self.session_scope() as session:
+            company = session.query(Company).filter(Company.id == company_id).first()
+            if not company:
+                raise ValueError("Company not found")
+            # Only owner can change AI opt-in
+            if company.owner_email != actor_email:
+                raise ValueError("Only company owner can change AI settings")
+            company.ai_enabled = bool(enabled)
+            session.add(company)
+            self._create_audit_event(session, company_id, actor_email, "company.ai.toggled", "company", company_id, {"ai_enabled": company.ai_enabled})
+            return company
+
+    def update_company_ai_config(self, company_id: str, actor_email: str | None = None, ai_api_key: str | None = None, ai_quota_per_hour: int | None = None) -> Company:
+        with self.session_scope() as session:
+            company = session.query(Company).filter(Company.id == company_id).first()
+            if not company:
+                raise ValueError("Company not found")
+            if company.owner_email != actor_email:
+                raise ValueError("Only company owner can change AI settings")
+            if ai_api_key is not None:
+                company.ai_api_key = ai_api_key
+            if ai_quota_per_hour is not None:
+                company.ai_quota_per_hour = str(ai_quota_per_hour)
+            session.add(company)
+            self._create_audit_event(session, company_id, actor_email, "company.ai.config.updated", "company", company_id, {"ai_quota_per_hour": company.ai_quota_per_hour})
             return company
 
     def list_companies(self, user_email: str) -> list[Company]:
@@ -646,3 +676,52 @@ class InventoryRepository:
                 "low_stock_items": int(low_stock_items),
                 "total_quantity": Decimal(str(total_quantity)),
             }
+
+    def execute_safe_select(self, company_id: str, sql: str, limit: int = 200) -> list[dict]:
+        """Execute a read-only SELECT with basic safety checks.
+
+        - Rejects non-SELECT statements and statements with multiple statements.
+        - Rejects common write/DDL keywords.
+        - Ensures a `LIMIT` is present (appends one if missing).
+        Returns list of dict rows.
+        """
+        s = (sql or "").strip()
+        if not s:
+            raise ValueError("Empty SQL")
+
+        # Disallow semicolons (multiple statements)
+        if ";" in s:
+            raise ValueError("Multiple statements are not allowed")
+
+        # Disallow SQL comment markers or UNION which may be used for injection
+        if "--" in s or "/*" in s or "*/" in s or re.search(r"(?i)\bunion\b", s):
+            raise ValueError("Potentially unsafe SQL (comments/UNION) detected")
+
+        # Must be a SELECT
+        if not re.match(r"(?i)^\s*select\b", s):
+            raise ValueError("Only SELECT queries are allowed")
+
+        # Disallow write/DDL keywords
+        if re.search(r"(?i)\b(insert|update|delete|alter|create|drop|truncate|merge)\b", s):
+            raise ValueError("Write or DDL statements are not allowed")
+
+        # Ensure LIMIT
+        if not re.search(r"(?i)\blimit\b", s):
+            s = f"{s} LIMIT {int(limit)}"
+
+        # Parameterize all single-quoted literals to avoid injection
+        literals = re.findall(r"'((?:\\'|[^'])*?)'", s)
+        params = {}
+        for i, lit in enumerate(literals):
+            pname = f"p{i}"
+            # replace only first occurrence each time to keep mapping
+            s = s.replace(f"'{lit}'", f":{pname}", 1)
+            params[pname] = lit.replace("\\'", "'")
+
+        with self.session_scope() as session:
+            result = session.execute(text(s), params)
+            try:
+                rows = [dict(r) for r in result.mappings().all()]
+            except Exception:
+                rows = [dict(r) for r in result.fetchall()]
+        return rows
