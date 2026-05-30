@@ -14,7 +14,7 @@ class ExecuteSafeSelectTests(unittest.TestCase):
         # create a simple table for testing
         with self.repo.session_scope() as session:
             session.execute(text("CREATE TABLE IF NOT EXISTS products (id TEXT PRIMARY KEY, name TEXT, company_id TEXT)"))
-            session.execute(text("INSERT INTO products (id, name, company_id) VALUES ('p1','Widget','comp1')"))
+            session.execute(text("INSERT INTO products (id, sku, name, company_id) VALUES ('p1','S1','Widget','comp1')"))
 
     def tearDown(self):
         settings.DATABASE_URL = self._orig_db

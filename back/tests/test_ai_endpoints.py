@@ -8,7 +8,7 @@ from app.application.dependencies import get_current_user
 
 class MockRepo:
     def get_company(self, company_id, user_email=None):
-        return True
+        return type("C", (), {"id": company_id, "ai_enabled": True, "owner_email": "test@example.com", "ai_quota_per_hour": "0"})()
 
     def execute_safe_select(self, company_id, sql, limit=200):
         return [{"id": "1", "sku": "S1", "name": "Widget"}]
