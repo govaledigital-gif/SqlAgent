@@ -127,6 +127,9 @@ class Settings(BaseSettings):
 # Global settings instance
 settings = Settings()
 
+if not settings.DATABASE_URL and settings.ENVIRONMENT != "production":
+    settings.DATABASE_URL = "sqlite:///:memory:"
+
 # Validate on startup
 if settings.ENVIRONMENT == "production":
     settings.validate_production()
